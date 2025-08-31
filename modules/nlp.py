@@ -22,7 +22,7 @@ class NLP:
             'reminder': [r'\b(remind me|set reminder|reminder)\b'],
             'file_operation': [r'\b(open file|find file|create file|delete file)\b'],
             'whatsapp': [r'\b(send message|whatsapp|message|text)\b'],
-            'work_help': [r'\b(help with work|work assistance|productivity|start session|end session|stats|system stats)\b'],
+            'work_help': [r'\b(help.*work|work.*help|work assistance|productivity|start session|start work|end session|stats|system stats)\b'],
             'vision_command': [r'\b(look at|see|watch|monitor|detect|can you see)\b'],
             'goodbye': [r'\b(goodbye|bye|see you|exit|quit)\b']
         }
@@ -59,13 +59,24 @@ class NLP:
         
         elif command == 'whatsapp':
             # Extract contact and message
-            contact_match = re.search(r'\bto ([a-zA-Z\s]+)', text)
+            # Look for patterns like "send message to [contact] about [message]"
+            contact_match = re.search(r'\b(?:to|contact)\s+([a-zA-Z]+)', text)
             if contact_match:
                 params['contact'] = contact_match.group(1).strip()
             
-            message_match = re.search(r'\bmessage (.+)', text)
-            if message_match:
-                params['message'] = message_match.group(1).strip()
+            # Extract message after "about" or "saying" or just the message part
+            message_patterns = [
+                r'\babout\s+(.+)',
+                r'\bsaying\s+(.+)', 
+                r'\bmessage\s+(.+)',
+                r'\btext\s+(.+)'
+            ]
+            
+            for pattern in message_patterns:
+                message_match = re.search(pattern, text)
+                if message_match:
+                    params['message'] = message_match.group(1).strip()
+                    break
         
         elif command == 'file_operation':
             # Extract file name and operation

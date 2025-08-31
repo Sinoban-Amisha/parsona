@@ -1,6 +1,7 @@
 # modules/assistant.py
 import threading
 import time
+import re
 from datetime import datetime
 from modules.vision import Vision
 from modules.speech import Speech
@@ -129,12 +130,15 @@ class PersonaAssistant:
                     return f"File operation '{operation}' not yet implemented"
             
             elif command == 'work_help':
-                if 'start session' in params.get('original_text', ''):
-                    task = params.get('original_text', '').replace('start session', '').strip()
-                    return self.work_assistant.start_work_session(task or "Work Session")
-                elif 'end session' in params.get('original_text', ''):
+                original_text = params.get('original_text', '')
+                if 'start session' in original_text or 'start work' in original_text:
+                    # Extract task name
+                    task_match = re.search(r'(?:start (?:work )?session (?:on |for )?)(.*)', original_text)
+                    task_name = task_match.group(1).strip() if task_match else "Work Session"
+                    return self.work_assistant.start_work_session(task_name)
+                elif 'end session' in original_text:
                     return self.work_assistant.end_work_session()
-                elif 'stats' in params.get('original_text', ''):
+                elif 'stats' in original_text or 'system' in original_text:
                     stats = self.work_assistant.get_system_stats()
                     return f"System stats: CPU {stats['cpu_usage']}%, Memory {stats['memory_usage']}%"
                 else:
